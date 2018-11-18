@@ -1,5 +1,6 @@
-import { Component, OnInit  } from '@angular/core';
+import { Component, OnInit, Inject  } from '@angular/core';
 import { DomSanitizer, SafeUrl, SafeResourceUrl } from "@angular/platform-browser";
+import { HttpClient } from '@angular/common/http';
 
 export interface VideoOption {
     value: string;
@@ -42,21 +43,40 @@ export class HomeComponent implements OnInit {
     ];
 
 
+   
+
+    http: HttpClient;
+    baseUrl: string;
+
+    constructor(private sanitizer: DomSanitizer, http: HttpClient, @Inject('BASE_URL') baseUrl: string)
+    {
+        this.videoLoaded = false;
+        this.http = http;
+        this.baseUrl = baseUrl;
+    }
+
     videoLoaded = true;
     videoTemplate = "https://www.youtube.com/embed/";
     completeURL: SafeResourceUrl;
     videoID: string;
 
-    constructor(private sanitizer: DomSanitizer)
-    {
-        this.videoLoaded = false;
-    }
-
     public GetVideo()
     {
-        this.videoID = "YE7VzlLtp-4";
+        this.RetrieveID(this.http, this.baseUrl);
         this.completeURL = this.sanitizer.bypassSecurityTrustResourceUrl(this.videoTemplate + this.videoID);
 
         this.videoLoaded = !this.videoLoaded;
     }
+
+    RetrieveID(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
+        http.get<YoutubeVideo>(baseUrl + 'api/SampleData/YoutubeLuckySearch').subscribe(result => {
+            this.videoID = result.id;
+        }, error => console.error(error));
+    }
 }
+
+interface YoutubeVideo {
+    id: string;
+    etag: number;
+}
+

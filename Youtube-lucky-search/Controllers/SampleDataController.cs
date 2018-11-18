@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Youtube_lucky_search.Model;
 
 namespace Youtube_lucky_search.Controllers
 {
@@ -39,6 +40,18 @@ namespace Youtube_lucky_search.Controllers
                     return 32 + (int)(TemperatureC / 0.5556);
                 }
             }
+        }
+
+        [HttpGet("[action]")]
+        public YoutubeVideo YoutubeLuckySearch()
+        {
+            YoutubeVideo videoSample = new YoutubeVideo()
+            {
+                kind = "",
+                id = "YE7VzlLtp-4",
+                statistics = new YoutubeStatistics(1000, 70, 3)
+            };
+            return videoSample;
         }
     }
 }
