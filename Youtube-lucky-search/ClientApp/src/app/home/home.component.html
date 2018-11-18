@@ -1,35 +1,41 @@
-<h1> Youtube lucky search!</h1>
+<div class="row" style="text-align: center;">
+  <h1> Youtube lucky search!</h1>
+</div>
 <hr />
 <form class="example-form">
-  <mat-form-field class="example-full-width" >
-    <input matInput placeholder="Any keyword preference" [(ngModel)]="chosenKeyword" name="keyword">
-  </mat-form-field>
-
-  <div class="row">
-    <div class="col">
-      <mat-form-field>
-        <mat-select placeholder="Preferred video length" [(ngModel)]="chosenLength" name="length">
-          <mat-option *ngFor="let length of lengths" [value]="length.value">
-            {{length.viewValue}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-    </div>
-  <div class="row">
-    <div class="col">
-      <mat-form-field>
-        <mat-select placeholder="Preferred video popularity" [(ngModel)]="chosenPopularity" name="popularity">
-          <mat-option *ngFor="let popularity of popularities" [value]="popularity.value">
-            {{popularity.viewValue}}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
-  </div>
+  <div class="example-full-width">
     <div class="row">
       <div class="col">
-        <mat-form-field>
+        <mat-form-field class="example-control">
+          <input matInput placeholder="Any keyword preference" [(ngModel)]="chosenKeyword" name="keyword">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <mat-form-field class="example-control">
+          <mat-select placeholder="Preferred video length" [(ngModel)]="chosenLength" name="length">
+            <mat-option *ngFor="let length of lengths" [value]="length.value">
+              {{length.viewValue}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <mat-form-field class="example-control">
+          <mat-select placeholder="Preferred video popularity" [(ngModel)]="chosenPopularity" name="popularity">
+            <mat-option *ngFor="let popularity of popularities" [value]="popularity.value">
+              {{popularity.viewValue}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <mat-form-field class="example-control">
           <mat-select placeholder="Preferred video rating" [(ngModel)]="chosenRating" name="Rating">
             <mat-option *ngFor="let rating of ratings" [value]="rating.value">
               {{rating.viewValue}}
@@ -38,17 +44,24 @@
         </mat-form-field>
       </div>
     </div>
-    <div class="row">
+    <div class="row" style="text-align: center;">
       <div class="col">
         <button mat-raised-button (click)="GetVideo()" color="primary">Roll</button>
       </div>
     </div>
+  </div>
 </form>
-  <div class="example-selected-value">Your chosen video title is: {{chosenKeyword}}</div>
+  <!--<div class="example-selected-value">Your chosen video title is: {{chosenKeyword}}</div>
   <div class="example-selected-value">Your chosen video length is: {{chosenLength}}</div>
 <div class="example-selected-value">Your chosen video popularity is: {{chosenPopularity}}</div>
-<div class="example-selected-value">Your chosen video rating is: {{chosenRating}}</div>
+<div class="example-selected-value">Your chosen video rating is: {{chosenRating}}</div>-->
 
-<div *ngIf="videoLoaded">
-  <iframe width="560" height="315" [src]="completeURL" frameborder="0" allowfullscreen></iframe>
+<div *ngIf="videoLoaded" class="videoContainer">
+  <div class="resp-container">
+    <iframe class="resp-iframe" [src]="completeURL" frameborder="0" allowfullscreen></iframe>
+  </div>
 </div>
+
+<!--<div class="example-selected-value">Your selected video popularity is: {{selectedPopularity}}</div>
+<div class="example-selected-value">Your selected video rating is: {{selectedRating}}</div>-->
+

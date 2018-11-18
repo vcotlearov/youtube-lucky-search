@@ -11,5 +11,12 @@ namespace Youtube_lucky_search.Model
         public string etag { get; set; }
         public string id { get; set; }
         public YoutubeStatistics statistics { get; set; }
+
+
+        public YoutubeVideo() { }
+        public YoutubeVideo(string id)
+        {
+            this.id = id;
+        }
     }
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject  } from '@angular/core';
 import { DomSanitizer, SafeUrl, SafeResourceUrl } from "@angular/platform-browser";
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 export interface VideoOption {
     value: string;
@@ -31,7 +31,7 @@ export class HomeComponent implements OnInit {
         { value: 'Niche', viewValue: 'Niche (>5k views)' },
         { value: 'Popular', viewValue: 'Popular (>50k views)' },
         { value: 'Viral', viewValue: 'Viral (>500k views)' },
-        { value: 'OMG', viewValue: 'OMG (>1M views)' }
+        { value: 'OMG', viewValue: 'OMG (>5M views)' }
     ];
 
     chosenRating: string;
@@ -42,7 +42,8 @@ export class HomeComponent implements OnInit {
         { value: 'Awesome', viewValue: 'Awesome (>90%)' }
     ];
 
-
+    selectedPopularity: number;
+    selectedRating: number;
    
 
     http: HttpClient;
@@ -61,9 +62,16 @@ export class HomeComponent implements OnInit {
 
     public GetVideo()
     {
+        let params = new HttpParams();
+        params = params.append('videoLength', this.chosenLength);
+        params = params.append('views', this.chosenPopularity);
+        params = params.append('rating', this.chosenRating);
+
         this.videoLoaded = false;
-        this.http.get<YoutubeVideo>(this.baseUrl + 'api/SampleData/YoutubeLuckySearch').subscribe(result => {
+        this.http.get<YoutubeVideo>(this.baseUrl + 'api/SampleData/YoutubeLuckySearch', { params: params }).subscribe(result => {
             this.completeURL = this.sanitizer.bypassSecurityTrustResourceUrl(this.videoTemplate + result.id);
+            this.selectedPopularity = result.statistics.viewCount;
+            this.selectedRating = result.statistics.rating;
             this.videoLoaded = true;
         }, error => console.error(error));
     }
@@ -71,4 +79,16 @@ export class HomeComponent implements OnInit {
 
 interface YoutubeVideo {
     id: string;
+    statistics: YoutubeStatistics;
 }
+interface YoutubeStatistics {
+    viewCount: number;
+    rating: number;
+}
+
+interface LuckySetup {
+    videoLength: string;
+    views: string;
+    rating: string;
+}
+
