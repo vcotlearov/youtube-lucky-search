@@ -58,25 +58,17 @@ export class HomeComponent implements OnInit {
     videoLoaded = true;
     videoTemplate = "https://www.youtube.com/embed/";
     completeURL: SafeResourceUrl;
-    videoID: string;
 
     public GetVideo()
     {
-        this.RetrieveID(this.http, this.baseUrl);
-        this.completeURL = this.sanitizer.bypassSecurityTrustResourceUrl(this.videoTemplate + this.videoID);
-
-        this.videoLoaded = !this.videoLoaded;
-    }
-
-    RetrieveID(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
-        http.get<YoutubeVideo>(baseUrl + 'api/SampleData/YoutubeLuckySearch').subscribe(result => {
-            this.videoID = result.id;
+        this.videoLoaded = false;
+        this.http.get<YoutubeVideo>(this.baseUrl + 'api/SampleData/YoutubeLuckySearch').subscribe(result => {
+            this.completeURL = this.sanitizer.bypassSecurityTrustResourceUrl(this.videoTemplate + result.id);
+            this.videoLoaded = true;
         }, error => console.error(error));
     }
 }
 
 interface YoutubeVideo {
     id: string;
-    etag: number;
 }
-
