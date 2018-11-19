@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Youtube_lucky_search.Model;
+using Google.Apis.YouTube.v3;
+using Google.Apis.Services;
 
 namespace Youtube_lucky_search.Controllers
 {
@@ -12,59 +14,123 @@ namespace Youtube_lucky_search.Controllers
     {
         private static Random _rand = new Random();
         [HttpGet("[action]")]
-        public YoutubeVideo YoutubeLuckySearch(string videoLength, string views, string rating)
+        public YoutubeVideo YoutubeLuckySearch(string keywords, string videoLength, string views, string rating)
         {
-            var LuckyParams = ParseParams(videoLength, views, rating);
+            var LuckyParams = ParseParams(keywords, videoLength, views, rating);
 
             var videoList = GetVideos(LuckyParams);
             if (videoList.Count() == 0)
             {
-                var rickRoll = new YoutubeVideo("dQw4w9WgXcQ");
+                var rickRoll = new YoutubeVideo("dQw4w9WgXcQ"); // the one and famous ID just for every taste ;)
                 rickRoll.statistics = new YoutubeStatistics(0, 0, 0);
                 return rickRoll;
             }
-            //ThreadLocalRandom.Instance.Next()
             int luckyID = _rand.Next(0, videoList.Count());
 
             return videoList[luckyID];
         }
 
+        List<YoutubeVideo> videoList;
+
         private List<YoutubeVideo> GetVideos(LuckySetup luckyParams)
         {
-            var videoList = PrepareSampleVideos();
-
+            videoList = new List<YoutubeVideo>();
+            try
+            {
+                GetYoutubeVideos(luckyParams).Wait();
+            }
+            catch (AggregateException ex)
+            {
+                List<string> errors = new List<string>();
+                foreach (var e in ex.InnerExceptions)
+                {
+                    errors.Add(e.Message);
+                }
+            }
             return videoList.Where(v=>IsLucky(luckyParams.minRating, luckyParams.maxRating, v.statistics.rating) && IsLucky(luckyParams.minViews, luckyParams.maxViews, v.statistics.viewCount)).ToList();
         }
 
-        private bool IsLucky(int min, int  max, int value)
+        private async Task GetYoutubeVideos(LuckySetup luckyParams)
+        {
+            var youtubeService = new YouTubeService(new BaseClientService.Initializer()
+            {
+                ApiKey = "YOUR_API_KEY",
+                ApplicationName = this.GetType().ToString()
+            });
+
+            //Search for videos first
+            var videoListRequest = youtubeService.Search.List("id");
+            videoListRequest.Q = luckyParams.keywords;
+            videoListRequest.MaxResults = 50;
+            videoListRequest.Type = "video";
+            videoListRequest.VideoDuration = luckyParams.videoLength;
+            videoListRequest.VideoEmbeddable = SearchResource.ListRequest.VideoEmbeddableEnum.True__;
+
+            //This is "random" part of the application as youtube API does not outright support the random feature
+            //If neccessary can be further refined by randomizing the pick of Order type as well the applicability of particular params
+            videoListRequest.Order = SearchResource.ListRequest.OrderEnum.Date;
+            videoListRequest.PublishedBefore = RandomDay();
+
+            var videoListResponse = await videoListRequest.ExecuteAsync();
+            var videoIDs = videoListResponse.Items.Select(a=>a.Id.VideoId);
+
+            //Then retreive statistics for each video
+            var searchListRequest = youtubeService.Videos.List("id, statistics");
+            searchListRequest.Id = videoIDs.Aggregate("", (a,b)=> a += b + ",").TrimEnd(',');
+
+            var searchListResponse = await searchListRequest.ExecuteAsync();
+
+            foreach (var searchResult in searchListResponse.Items)
+            {
+                var tmpVideo = new YoutubeVideo(searchResult.Id);
+                tmpVideo.statistics = new YoutubeStatistics(searchResult.Statistics.ViewCount, searchResult.Statistics.LikeCount, searchResult.Statistics.DislikeCount);
+                videoList.Add(tmpVideo);
+            }
+        }
+
+        /// <summary>
+        /// Stone-age randomizer - at least you will hardly ever see a duplicate, right? :)
+        /// </summary>
+        /// <returns></returns>
+        private DateTime RandomDay()
+        {
+            DateTime start = new DateTime(2015, 1, 1);
+            int range = (DateTime.Today - start).Days;
+            return start.AddDays(_rand.Next(range));
+        }
+
+        private bool IsLucky(ulong? min, ulong? max, ulong? value)
         {
             return min <= value && value <= max ? true : false;
         }
 
-        private LuckySetup ParseParams(string videoLength, string views, string rating)
+        private LuckySetup ParseParams(string keywords, string videoLength, string views, string rating)
         {
-            var lucky = new LuckySetup();
+            var lucky = new LuckySetup
+            {
+                keywords = keywords
+            };
 
-            switch(videoLength)
+            switch (videoLength)
             {
                 case ("Short"):
                     {
-                        lucky.videoLength = "short";
+                        lucky.videoLength = SearchResource.ListRequest.VideoDurationEnum.Short__;
                         break;
                     }
                 case ("Medium"):
                     {
-                        lucky.videoLength = "medium";
+                        lucky.videoLength = SearchResource.ListRequest.VideoDurationEnum.Medium;
                         break;
                     }
                 case ("Long"):
                     {
-                        lucky.videoLength = "long";
+                        lucky.videoLength = SearchResource.ListRequest.VideoDurationEnum.Long__;
                         break;
                     }
                 default:
                     {
-                        lucky.videoLength = "any";
+                        lucky.videoLength = SearchResource.ListRequest.VideoDurationEnum.Any;
                         break;
                     }
             }
@@ -113,7 +179,7 @@ namespace Youtube_lucky_search.Controllers
             {
                 case ("Disaster"):
                     {
-                        lucky.minRating = -99999999;
+                        lucky.minRating = 0;
                         lucky.maxRating = 39;
                         break;
                     }
@@ -137,7 +203,7 @@ namespace Youtube_lucky_search.Controllers
                     }
                 default:
                     {
-                        lucky.minRating = -99999999;
+                        lucky.minRating = 0;
                         lucky.maxRating = 100;
                         break;
                     }
@@ -145,82 +211,16 @@ namespace Youtube_lucky_search.Controllers
 
             return lucky;
         }
-
-        private List<YoutubeVideo> PrepareSampleVideos()
-        {
-            return new List<YoutubeVideo>()
-            {
-                new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(100, 70, 3)
-            },
-                  new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(10, 70, 98)
-            },
-                    new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(1000, 70, 23)
-            },
-                      new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(51000, 70, 3)
-            },
-                        new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(100000, 70, 50)
-            },
-                          new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(3000000, 70, 3)
-            },
-                            new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(250000, 70, 8)
-            },
-                              new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(14000, 70, 3)
-            },
-                                new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(140000, 70, 20)
-            },
-                                  new YoutubeVideo()
-            {
-                kind = "",
-                id = "YE7VzlLtp-4",
-                statistics = new YoutubeStatistics(750000, 70, 40)
-            },
-            };
-        }
     }
 
     public class LuckySetup
     {
-        public string videoLength;
-        public int minViews;
-        public int maxViews;
-        public int minRating;
-        public int maxRating;
+        public string keywords;
+        public SearchResource.ListRequest.VideoDurationEnum videoLength;
+        public ulong? minViews;
+        public ulong? maxViews;
+        public ulong? minRating;
+        public ulong? maxRating;
     }
 
 }

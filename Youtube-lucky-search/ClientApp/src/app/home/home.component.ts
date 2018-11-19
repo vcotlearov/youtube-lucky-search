@@ -63,6 +63,7 @@ export class HomeComponent implements OnInit {
     public GetVideo()
     {
         let params = new HttpParams();
+        params = params.append('keywords', this.chosenKeyword);
         params = params.append('videoLength', this.chosenLength);
         params = params.append('views', this.chosenPopularity);
         params = params.append('rating', this.chosenRating);

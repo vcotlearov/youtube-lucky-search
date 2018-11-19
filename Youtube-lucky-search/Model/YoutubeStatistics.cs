@@ -7,20 +7,21 @@ namespace Youtube_lucky_search.Model
 {
     public class YoutubeStatistics
     {
-        public int viewCount { get; set; }
-        public int likeCount { get; set; }
-        public int dislikeCount { get; set; }
+        public ulong? viewCount { get; set; }
+        public ulong? likeCount { get; set; }
+        public ulong? dislikeCount { get; set; }
 
-        public int rating {
+        public ulong? rating {
             get
             {
-                if (likeCount <= 0) return 0;
+                if (!likeCount.HasValue || likeCount <= 0) return 0;
+                if (!dislikeCount.HasValue) return 100;
                 if (likeCount - dislikeCount <= 0) return 0;
-                return (int)(((double)(likeCount - dislikeCount) / likeCount) * 100);
+                return (ulong?)(((double)(likeCount - dislikeCount) / likeCount) * 100);
             }
         }
 
-        public YoutubeStatistics(int view, int like, int dislike)
+        public YoutubeStatistics(ulong? view, ulong? like, ulong? dislike)
         {
             viewCount = view;
             likeCount = like;
